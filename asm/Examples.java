@@ -384,9 +384,9 @@ public class Examples extends AsmLib
     set_filename("default_master_code");
     set_rom_width(WIDTH_I);
     set_rom_depth(DEPTH_M_I);
-    //example_led();
+    example_led();
     //example_counter();
-    example_helloworld();
+    //example_helloworld();
     //test11();
   }
 
