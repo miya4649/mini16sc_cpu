@@ -36,11 +36,13 @@ module testbench;
     $monitor("time: %d reset: %d led: %d uart_re: %d uart_data_rx: %c", $time, reset, led, uart_re, uart_data_rx);
     for (i = 0; i < (1 << DEPTH_REG); i = i + 1)
     begin
-      $dumpvars(0, testbench.mini16sc_soc_0.mini16sc_cpu_0.regfile[i]);
+      ///$dumpvars(0, testbench.mini16sc_soc_0.mini16sc_cpu_0.regfile[i]);
+      $dumpvars(0, testbench.mini16sc_soc_0.mini16sc_cpu_0.q0[i]);
     end
     for (i = 0; i < 4; i = i + 1)
     begin
-      $dumpvars(0, testbench.mini16sc_soc_0.mini16sc_cpu_0.reg_sp[i]);
+      ///$dumpvars(0, testbench.mini16sc_soc_0.mini16sc_cpu_0.reg_sp[i]);
+      $dumpvars(0, testbench.mini16sc_soc_0.mini16sc_cpu_0.r0[i]);
     end
     for (i = 0; i < 32; i = i + 1)
     begin

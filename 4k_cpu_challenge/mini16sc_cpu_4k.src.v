@@ -1,89 +1,51 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2024 miya All rights reserved.
-
-module mini16sc_cpu
-  #(
-    parameter WIDTH_I = 16,
-    parameter WIDTH_D = 16,
-    parameter DEPTH_I = 8,
-    parameter DEPTH_D = 8,
-    parameter DEPTH_REG = 5
-    )
+module mini16sc_cpu_4k
+  #(parameter WIDTH_%I = 16, WIDTH_%D = 16, DEPTH_%I = 8, DEPTH_%D = 8, DEPTH_%REG = 5)
   (
-   input                    clk,
-   input                    reset,
-   input                    soft_reset,
-   output reg [DEPTH_I-1:0] mem_i_r_addr,
-   input [WIDTH_I-1:0]      mem_i_r_data,
-   output reg [DEPTH_D-1:0] mem_d_r_addr,
-   input [WIDTH_D-1:0]      mem_d_r_data,
-   output reg [DEPTH_D-1:0] mem_d_w_addr,
-   output reg [WIDTH_D-1:0] mem_d_w_data,
-   output reg               mem_d_we
+   input                    cl%k,
+   input                    res%et,
+   input                    soft_r%eset,
+   output wire [DEPTH_I-1:0] mem%_i_r_addr,
+   input [WIDTH_I-1:0]      mem%_i_r_data,
+   output wire [DEPTH_D-1:0] mem%_d_r_addr,
+   input [WIDTH_D-1:0]      mem%_d_r_data,
+   output wire [DEPTH_D-1:0] mem%_d_w_addr,
+   output wire [WIDTH_D-1:0] mem%_d_w_data,
+   output wire               mem%_d_we
    );
 
-  localparam TRUE = 1'b1;
-  localparam FALSE = 1'b0;
-  localparam ONE = 1'd1;
-  localparam ZERO = 1'd0;
-  localparam FFFF = {WIDTH_D{1'b1}};
-  localparam SHIFT_BITS = $clog2(WIDTH_D);
-  localparam DEPTH_OPERAND = 5;
-  localparam MUL_DELAY = 3;
-  localparam BL_OFFSET = 1'd1;
+  localparam WIDTH_I = WIDTH_%I, WIDTH_D = WIDTH_%D, DEPTH_I = DEPTH_%I, DEPTH_D = DEPTH_%D, DEPTH_REG = DEPTH_%REG;
+  wire clk = cl%k;
+  wire reset = res%et;
+  wire soft_reset = soft_r%eset;
+  wire [WIDTH_I-1:0] mem_i_r_data = mem%_i_r_data;
+  wire [WIDTH_D-1:0] mem_d_r_data = mem%_d_r_data;
+  output reg [DEPTH_I-1:0] mem_i_r_addr;
+  output reg [DEPTH_D-1:0] mem_d_r_addr, mem_d_w_addr;
+  output reg [WIDTH_D-1:0] mem_d_w_data;
+  output reg               mem_d_we;
+  assign mem%_i_r_addr = mem_i_r_addr;
+  assign mem%_d_r_addr = mem_d_r_addr;
+  assign mem%_d_w_addr = mem_d_w_addr;
+  assign mem%_d_w_data = mem_d_w_data;
+  assign mem%_d_we = mem_d_we;
 
-  // opcode
-  // reg_we: FALSE
-  localparam I_NOP  = 5'h00;
-  localparam I_ST   = 5'h01;
-  localparam I_MVC  = 5'h02;
-  localparam I_BA   = 5'h03;
-  localparam I_BC   = 5'h04;
-  localparam I_MUL  = 5'h05;
-  localparam I_SR   = 5'h06;
-  localparam I_SL   = 5'h07;
-  localparam I_SRA  = 5'h08;
-  // reg_we: TRUE
-  localparam I_ADD  = 5'h10;
-  localparam I_SUB  = 5'h11;
-  localparam I_AND  = 5'h12;
-  localparam I_OR   = 5'h13;
-  localparam I_XOR  = 5'h14;
-  localparam I_MV   = 5'h15;
-  localparam I_MVIL = 5'h16;
-  localparam I_MVS  = 5'h17;
-  localparam I_BL   = 5'h18;
-  localparam I_LD   = 5'h19;
-  localparam I_CNZ  = 5'h1a;
-  localparam I_CNM  = 5'h1b;
-
-  localparam SP_REG_MVC = 0;
-  localparam SP_REG_MVIL = 1;
+  localparam TRUE = 1'b1, FALSE = 1'b0, ONE = 1'd1, ZERO = 1'd0, FFFF = {WIDTH_D{1'b1}}, SHIFT_BITS = $clog2(WIDTH_D), DEPTH_OPERAND = 5, MUL_DELAY = 3, BL_OFFSET = 1'd1, SP_REG_MVC = 0, SP_REG_MVIL = 1;
 
   reg [WIDTH_I-1:0]        inst;
-  wire [DEPTH_OPERAND-1:0] ol_d;
-  wire [DEPTH_OPERAND-1:0] ol_a;
+  wire [DEPTH_OPERAND-1:0] ol_d, ol_a;
   wire [10:0]              im_l;
   wire                     is_im;
   wire [4:0]               op;
-  reg                      do_jump;
+  reg                      do_jump, reg_we, reg_a_nz, reg_a_nm;
   reg [DEPTH_I-1:0]        jump_addr;
-  reg [WIDTH_D-1:0]        reg_data_w;
-  reg [WIDTH_D-1:0]        reg_data_r_d;
-  reg [WIDTH_D-1:0]        reg_data_r_a;
   wire [WIDTH_D-1:0]       reg_addr_a;
   reg [DEPTH_REG-1:0]      reg_addr_w;
-  reg                      reg_we;
-  reg [WIDTH_D-1:0]        alu_din_d,  alu_din_a;
-  reg [WIDTH_D-1:0]        result_sl,  sl_pd,  sl_pa,  sl_b;
-  reg [WIDTH_D-1:0]        result_sr,  sr_pd,  sr_pa,  sr_b;
-  reg [WIDTH_D-1:0]        result_sra, sra_pd, sra_pa, sra_b;
-  reg [WIDTH_D-1:0]        result_mul, mul_pd, mul_pa;
+  reg [WIDTH_D-1:0]        reg_data_w, reg_data_r_d, reg_data_r_a, alu_din_d,  alu_din_a, result_sl,  sl_pd,  sl_pa,  sl_b, result_sr,  sr_pd,  sr_pa,  sr_b, result_sra, sra_pd, sra_pa, sra_b, result_mul, mul_pd, mul_pa;
   reg [WIDTH_D-1:0]        mul_b [0:MUL_DELAY];
   reg [WIDTH_D-1:0]        regfile [0:(1<<DEPTH_REG)-1];
   reg [WIDTH_D-1:0]        reg_sp [0:3];
-  reg                      reg_a_nz;
-  reg                      reg_a_nm;
   integer                  i;
 
   assign ol_d = inst[15:11];
@@ -94,14 +56,11 @@ module mini16sc_cpu
 
   always @*
   begin
-    // register read
     reg_data_r_d = regfile[ol_d];
     reg_data_r_a = regfile[ol_a];
-
     reg_a_nz = (reg_data_r_a != ZERO);
     reg_a_nm = (reg_data_r_a[WIDTH_D-1] == 1'b0);
 
-    // register write
     case (op)
       I_MVC:   reg_addr_w = SP_REG_MVC;
       I_MVIL:  reg_addr_w = SP_REG_MVIL;
@@ -112,7 +71,6 @@ module mini16sc_cpu
     else
       reg_we = FALSE;
 
-    // branch
     if ((op == I_BA) || ((op == I_BC) && (reg_data_r_d != ZERO)) || (op == I_BL))
     begin
       do_jump = TRUE;
@@ -124,7 +82,6 @@ module mini16sc_cpu
       jump_addr = ZERO;
     end
 
-    // ALU
     alu_din_d = reg_data_r_d;
     if (is_im == TRUE)
       alu_din_a = $signed(ol_a);
@@ -163,13 +120,11 @@ module mini16sc_cpu
 
   always @(posedge clk)
   begin
-    // register write
     if (reg_we == 1'b1)
     begin
       regfile[reg_addr_w] <= reg_data_w;
     end
 
-    // PC
     if (reset == TRUE)
     begin
       mem_i_r_addr <= ZERO;
@@ -193,13 +148,11 @@ module mini16sc_cpu
       end
     end
 
-    // fetch
     if (reset == TRUE)
       inst <= ZERO;
     else
       inst <= mem_i_r_data;
 
-    // load, store
     if (op == I_LD)
       mem_d_r_addr <= reg_data_r_a;
     if (op == I_ST)
@@ -211,7 +164,6 @@ module mini16sc_cpu
     else
       mem_d_we <= FALSE;
 
-    // mul
     if (op == I_MUL)
     begin
       mul_pd <= alu_din_d;
@@ -224,7 +176,6 @@ module mini16sc_cpu
     end
     reg_sp[3] <= mul_b[MUL_DELAY];
 
-    // shift
     if (op == I_SL)
     begin
       sl_pd <= alu_din_d;
