@@ -189,8 +189,8 @@ public class Examples extends AsmLib
   {
     // example of Continuous MUL
     as_nop();
-    as_mvi(R3, 2);
-    as_mvi(R4, 3);
+    as_mvi(R3, -2);
+    as_mvi(R4, -3);
     as_mvi(R5, 5);
     as_mvi(R6, 7);
     as_mul(R3, R3);
@@ -387,7 +387,7 @@ public class Examples extends AsmLib
     example_led();
     //example_counter();
     //example_helloworld();
-    //test11();
+    //test2();
   }
 
   @Override

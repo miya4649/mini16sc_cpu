@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2024 miya All rights reserved.
-module mini16sc_cpu_4k
+module mini16sc_cpu
   #(parameter WIDTH_%I = 16, WIDTH_%D = 16, DEPTH_%I = 8, DEPTH_%D = 8, DEPTH_%REG = 5)
   (
    input                    cl%k,
@@ -21,10 +21,10 @@ module mini16sc_cpu_4k
   wire soft_reset = soft_r%eset;
   wire [WIDTH_I-1:0] mem_i_r_data = mem%_i_r_data;
   wire [WIDTH_D-1:0] mem_d_r_data = mem%_d_r_data;
-  output reg [DEPTH_I-1:0] mem_i_r_addr;
-  output reg [DEPTH_D-1:0] mem_d_r_addr, mem_d_w_addr;
-  output reg [WIDTH_D-1:0] mem_d_w_data;
-  output reg               mem_d_we;
+  reg [DEPTH_I-1:0] mem_i_r_addr;
+  reg [DEPTH_D-1:0] mem_d_r_addr, mem_d_w_addr;
+  reg [WIDTH_D-1:0] mem_d_w_data;
+  reg               mem_d_we;
   assign mem%_i_r_addr = mem_i_r_addr;
   assign mem%_d_r_addr = mem_d_r_addr;
   assign mem%_d_w_addr = mem_d_w_addr;
