@@ -384,12 +384,6 @@ public class Asm
     set_inst_normal(0, 0, 0, I_NOP);
   }
 
-  public void as_wa(int reg_a)
-  {
-    // not implemented
-    set_inst_normal(0, 0, 0, I_NOP);
-  }
-
   public void as_ba(int reg_a)
   {
     set_inst_normal(0, reg_a, 0, I_BA);
@@ -405,6 +399,12 @@ public class Asm
     set_inst_normal(reg_d, reg_a, 0, I_ST);
   }
 
+  public void as_sti(int reg_d, int reg_a)
+  {
+    check_limit(reg_a, -16, 15, "sti");
+    set_inst_normal(reg_d, reg_a, 1, I_ST);
+  }
+
   public void as_mv(int reg_d, int reg_a)
   {
     set_inst_normal(reg_d, reg_a, 0, I_MV);
@@ -412,6 +412,7 @@ public class Asm
 
   public void as_mvi(int reg_d, int reg_a)
   {
+    check_limit(reg_a, -16, 15, "mvi");
     set_inst_normal(reg_d, reg_a, 1, I_MV);
   }
 
@@ -444,6 +445,7 @@ public class Asm
 
   public void as_andi(int reg_d, int reg_a)
   {
+    check_limit(reg_a, -16, 15, "andi");
     set_inst_normal(reg_d, reg_a, 1, I_AND);
   }
 
@@ -454,6 +456,7 @@ public class Asm
 
   public void as_ori(int reg_d, int reg_a)
   {
+    check_limit(reg_a, -16, 15, "ori");
     set_inst_normal(reg_d, reg_a, 1, I_OR);
   }
 
@@ -464,6 +467,7 @@ public class Asm
 
   public void as_xori(int reg_d, int reg_a)
   {
+    check_limit(reg_a, -16, 15, "xori");
     set_inst_normal(reg_d, reg_a, 1, I_XOR);
   }
 
@@ -474,6 +478,7 @@ public class Asm
 
   public void as_muli(int reg_d, int reg_a)
   {
+    check_limit(reg_a, -16, 15, "muli");
     set_inst_normal(reg_d, reg_a, 1, I_MUL);
   }
 

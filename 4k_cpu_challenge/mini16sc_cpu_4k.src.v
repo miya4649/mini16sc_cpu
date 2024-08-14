@@ -158,7 +158,7 @@ module mini16sc_cpu
     if (op == I_ST)
       mem_d_w_addr <= reg_data_r_d;
     if (op == I_ST)
-      mem_d_w_data <= reg_data_r_a;
+      mem_d_w_data <= alu_din_a;
     if (op == I_ST)
       mem_d_we <= TRUE;
     else

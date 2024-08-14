@@ -5,13 +5,7 @@ public class AsmLib extends Asm
 {
   public int DEPTH_REG;
 
-  public int ENABLE_MVIL;
-  public int ENABLE_MUL;
-  public int ENABLE_MVC;
-  public int ENABLE_WA;
   public int ENABLE_UART;
-  public int ENABLE_MULTI_BIT_SHIFT;
-  public int ENABLE_SINGLE_CYCLE;
 
   public int WIDTH_I;
   public int DEPTH_IO_REG;
@@ -60,9 +54,13 @@ public class AsmLib extends Asm
   public static final int R8 = 8;
 
   public static final int WAIT_DELAYSLOT = 2;
-  public static final int WAIT_DEPENDENCY = 0;
 
   public static final int MVIL_ADDR_LIMIT = 0x800;
+
+  public static final int MVS_SL = 0;
+  public static final int MVS_SR = 1;
+  public static final int MVS_SRA = 2;
+  public static final int MVS_MUL = 3;
 
   public GetOpt opts;
 
@@ -71,28 +69,16 @@ public class AsmLib extends Asm
     // init: must be implemented in sub-classes
     opts = new GetOpt();
     opts.setArgs(args);
-    opts.setDefault("lreg_start", 24);
-    opts.setDefault("enable_mvil", 1);
-    opts.setDefault("enable_mul", 0);
-    opts.setDefault("enable_mvc", 0);
-    opts.setDefault("enable_wa", 0);
-    opts.setDefault("enable_multi_bit_shift", 0);
-    opts.setDefault("enable_uart", 1);
-    opts.setDefault("enable_single_cycle", 1);
     opts.setDefault("width_m_d", 16);
     opts.setDefault("depth_m_i", 10);
     opts.setDefault("depth_m_d", 8);
     opts.setDefault("depth_u2m", 8);
+    opts.setDefault("lreg_start", 24);
+    opts.setDefault("enable_uart", 1);
 
     DEPTH_REG = 5;
 
-    ENABLE_MVIL = opts.getIntValue("enable_mvil");
-    ENABLE_MUL = opts.getIntValue("enable_mul");
-    ENABLE_MVC = opts.getIntValue("enable_mvc");
-    ENABLE_WA = opts.getIntValue("enable_wa");
-    ENABLE_MULTI_BIT_SHIFT = opts.getIntValue("enable_multi_bit_shift");
     ENABLE_UART = opts.getIntValue("enable_uart");
-    ENABLE_SINGLE_CYCLE = opts.getIntValue("enable_single_cycle");
 
     WIDTH_I = 16;
     DEPTH_IO_REG = 5;
@@ -180,10 +166,10 @@ public class AsmLib extends Asm
     as_mv(SP_REG_STACK_POINTER, SP_REG_MVIL);
   }
 
-  // load with label
+  // load with label (no wait)
   // reg: destination register (previously loaded data)
   // name: data address label (load reservation, latency:3)
-  public void lib_ld(int reg, String name)
+  public void lib_ld_nw(int reg, String name)
   {
     int addr = addr_abs(name);
     if (addr > MVIL_ADDR_LIMIT)
@@ -194,8 +180,8 @@ public class AsmLib extends Asm
     as_ld(reg, SP_REG_MVIL);
   }
 
-  // load with label and wait
-  public void lib_ld_w(int reg, String name)
+  // load with label (with wait)
+  public void lib_ld(int reg, String name)
   {
     int addr = addr_abs(name);
     if (addr > MVIL_ADDR_LIMIT)
@@ -363,60 +349,6 @@ public class AsmLib extends Asm
     lib_return();
   }
 
-  public void lib_sl(int reg_d, int reg_a)
-  {
-    as_sl(reg_d, reg_a);
-    lib_nop(2);
-    as_mvsi(reg_d, 0);
-  }
-
-  public void lib_sli(int reg_d, int shift_width)
-  {
-    if ((shift_width < 0) || (shift_width > 15))
-    {
-      print_error("lib_sli: shift_width exceeds limit 0 to 15");
-    }
-    as_sli(reg_d, shift_width);
-    lib_nop(2);
-    as_mvsi(reg_d, 0);
-  }
-
-  public void lib_sr(int reg_d, int reg_a)
-  {
-    as_sr(reg_d, reg_a);
-    lib_nop(2);
-    as_mvsi(reg_d, 1);
-  }
-
-  public void lib_sri(int reg_d, int shift_width)
-  {
-    if ((shift_width < 0) || (shift_width > 15))
-    {
-      print_error("lib_sri: shift_width exceeds limit 0 to 15");
-    }
-    as_sri(reg_d, shift_width);
-    lib_nop(2);
-    as_mvsi(reg_d, 1);
-  }
-
-  public void lib_sra(int reg_d, int reg_a)
-  {
-    as_sra(reg_d, reg_a);
-    lib_nop(2);
-    as_mvsi(reg_d, 2);
-  }
-
-  public void lib_srai(int reg_d, int shift_width)
-  {
-    if ((shift_width < 0) || (shift_width > 15))
-    {
-      print_error("lib_srai: shift_width exceeds limit 0 to 15");
-    }
-    as_srai(reg_d, shift_width);
-    lib_nop(2);
-    as_mvsi(reg_d, 2);
-  }
-
   public void f_uart_char()
   {
     // uart put char
@@ -425,9 +357,25 @@ public class AsmLib extends Asm
     label("f_uart_char");
     lib_push(SP_REG_LINK);
     // LREG0 = UART_BUSY addr
-    lib_set_im(LREG0, (MASTER_R_BANK_IO_REG << DEPTH_B_M_R) + IO_REG_R_UART_BUSY);
+    //lib_set_im(LREG0, (MASTER_R_BANK_IO_REG << DEPTH_B_M_R) + IO_REG_R_UART_BUSY);
+    as_mvil(MASTER_R_BANK_IO_REG);
+    as_mv(LREG0, SP_REG_MVIL);
+    as_mvil(DEPTH_B_M_R);
+    as_sl(LREG0, SP_REG_MVIL);
+    as_mvil(IO_REG_R_UART_BUSY);
+    as_nop();
+    as_mvsi(LREG0, MVS_SL);
+    as_add(LREG0, SP_REG_MVIL);
     // LREG1 = UART TX addr
-    lib_set_im(LREG1, (MASTER_W_BANK_IO_REG << DEPTH_B_M_W) + IO_REG_W_UART);
+    //lib_set_im(LREG1, (MASTER_W_BANK_IO_REG << DEPTH_B_M_W) + IO_REG_W_UART);
+    as_mvil(MASTER_W_BANK_IO_REG);
+    as_mv(LREG1, SP_REG_MVIL);
+    as_mvil(DEPTH_B_M_W);
+    as_sl(LREG1, SP_REG_MVIL);
+    as_mvil(IO_REG_W_UART);
+    as_nop();
+    as_mvsi(LREG1, MVS_SL);
+    as_add(LREG1, SP_REG_MVIL);
     // while (uart busy){}
     as_ld(LREG2, LREG0);
     lib_nop(2);
@@ -499,9 +447,10 @@ public class AsmLib extends Asm
     lib_set_im(R5, WIDTH_M_D - 4);
     label("f_uart_hex_word_L_0");
     as_mv(R6, R4);
-    lib_sr(R6, R5);
-    as_mv(R3, R6);
+    as_sr(R6, R5);
     as_subi(R5, 4);
+    as_nop();
+    as_mvsi(R3, MVS_SR);
     lib_call("f_uart_hex");
     as_cnm(R7, R5);
     lib_bc(R7, "f_uart_hex_word_L_0");
@@ -579,15 +528,15 @@ public class AsmLib extends Asm
     lib_return();
   }
 
-  public void f_uart_print()
+  public void f_uart_print_32()
   {
     // uart print string
     // input: r3:text_start_address
     // output: none
     // depend: f_uart_char
-    label("f_uart_print");
+    label("f_uart_print_32");
     /*
-    addr:r4 shift:r5 char:r6
+    addr:r4 shift:r5 char:r3
     addr = r3;
     shift = 24;
     do
@@ -617,24 +566,26 @@ public class AsmLib extends Asm
     lib_set_im(Ri24, 24);
     lib_set_im(Ri0xff, 0xff);
     as_mv(Rshift, Ri24);
-    label("f_uart_print_L_0");
+    label("f_uart_print_32_L_0");
     as_ld(Rchar, Raddr);
     lib_nop(2);
     as_ld(Rchar, Raddr);
-    lib_sr(Rchar, Rshift);
+    as_sr(Rchar, Rshift);
+    lib_nop(2);
+    as_mvsi(Rchar, MVS_SR);
     as_and(Rchar, Ri0xff);
     as_cnz(Rcp, Rchar);
-    lib_bc(Rcp, "f_uart_print_L_1");
-    lib_ba("f_uart_print_L_2");
-    label("f_uart_print_L_1");
+    lib_bc(Rcp, "f_uart_print_32_L_1");
+    lib_ba("f_uart_print_32_L_2");
+    label("f_uart_print_32_L_1");
     lib_call("f_uart_char");
     as_subi(Rshift, 8);
     as_cnm(Rcp, Rshift);
-    lib_bc(Rcp, "f_uart_print_L_0");
+    lib_bc(Rcp, "f_uart_print_32_L_0");
     as_mv(Rshift, Ri24);
     as_addi(Raddr, 1);
-    lib_ba("f_uart_print_L_0");
-    label("f_uart_print_L_2");
+    lib_ba("f_uart_print_32_L_0");
+    label("f_uart_print_32_L_2");
     lib_pop_regs(R4, 5);
     lib_pop(SP_REG_LINK);
     lib_return();
@@ -673,7 +624,7 @@ public class AsmLib extends Asm
     int Rcp = R8;
 
     lib_push(SP_REG_LINK);
-    lib_push_regs(R4, 4);
+    lib_push_regs(R4, 5);
     as_mv(Raddr, R3);
     lib_set_im(Ri8, 8);
     lib_set_im(Ri0xff, 0xff);
@@ -682,7 +633,9 @@ public class AsmLib extends Asm
     as_ld(Rchar, Raddr);
     lib_nop(2);
     as_ld(Rchar, Raddr);
-    lib_sr(Rchar, Rshift);
+    as_sr(Rchar, Rshift);
+    lib_nop(2);
+    as_mvsi(Rchar, MVS_SR);
     as_and(Rchar, Ri0xff);
     as_cnz(Rcp, Rchar);
     lib_bc(Rcp, "f_uart_print_16_L_1");
@@ -696,7 +649,7 @@ public class AsmLib extends Asm
     as_addi(Raddr, 1);
     lib_ba("f_uart_print_16_L_0");
     label("f_uart_print_16_L_2");
-    lib_pop_regs(R4, 4);
+    lib_pop_regs(R4, 5);
     lib_pop(SP_REG_LINK);
     lib_return();
   }

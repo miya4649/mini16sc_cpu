@@ -24,7 +24,9 @@ public class Examples extends AsmLib
     label("f_get_io_reg_w_addr");
     lib_push(SP_REG_LINK);
     lib_set_im(tmp0, IO_REG_W_ADDR_H);
-    lib_sli(tmp0, IO_REG_W_ADDR_SHIFT);
+    as_sli(tmp0, IO_REG_W_ADDR_SHIFT);
+    lib_nop(2);
+    as_mvsi(tmp0, MVS_SL);
     as_add(io_reg_w_addr, tmp0);
     lib_pop(SP_REG_LINK);
     lib_return();
@@ -40,7 +42,9 @@ public class Examples extends AsmLib
     label("f_get_io_reg_r_addr");
     lib_push(SP_REG_LINK);
     lib_set_im(tmp0, IO_REG_R_ADDR_H);
-    lib_sli(tmp0, IO_REG_R_ADDR_SHIFT);
+    as_sli(tmp0, IO_REG_R_ADDR_SHIFT);
+    lib_nop(2);
+    as_mvsi(tmp0, MVS_SL);
     as_add(io_reg_r_addr, tmp0);
     lib_pop(SP_REG_LINK);
     lib_return();
@@ -54,7 +58,9 @@ public class Examples extends AsmLib
     label("f_get_u2m_addr");
     lib_push(SP_REG_LINK);
     lib_set_im(u2m_addr, U2M_ADDR_H);
-    lib_sli(u2m_addr, U2M_ADDR_SHIFT);
+    as_sli(u2m_addr, U2M_ADDR_SHIFT);
+    lib_nop(2);
+    as_mvsi(u2m_addr, MVS_SL);
     lib_pop(SP_REG_LINK);
     lib_return();
   }
@@ -89,13 +95,15 @@ public class Examples extends AsmLib
     lib_call("f_get_io_reg_w_addr");
     as_mvi(counter, 0);
     as_mvi(counter2, 0);
-    as_mvi(shift, 5);
     // normal: shift=5
+    as_mvi(shift, 5);
     label("example_led_L_0");
     as_mv(led, counter);
-    lib_sr(led, shift);
-    as_st(led_addr, led);
+    as_sr(led, shift);
     as_addi(counter, 1);
+    as_nop();
+    as_mvsi(led, MVS_SR);
+    as_st(led_addr, led);
     label("example_led_L_1");
     as_cnz(R8, counter2);
     as_addi(counter2, 1);
@@ -128,14 +136,29 @@ public class Examples extends AsmLib
     as_nop();
     lib_init_stack();
     as_mvi(R4, MASTER_R_BANK_MEM_D);
-    lib_sli(R4, DEPTH_B_M_R);
+    as_sli(R4, DEPTH_B_M_R);
     lib_set_im(R3, addr_abs("d_helloworld"));
+    as_mvsi(R4, MVS_SL);
     as_add(R3, R4);
-    lib_call("f_uart_print_16");
+    if (WIDTH_M_D == 32)
+    {
+      lib_call("f_uart_print_32");
+    }
+    else
+    {
+      lib_call("f_uart_print_16");
+    }
     lib_call("f_halt");
     // link library
     f_uart_char();
-    f_uart_print_16();
+    if (WIDTH_M_D == 32)
+    {
+      f_uart_print_32();
+    }
+    else
+    {
+      f_uart_print_16();
+    }
     f_halt();
     f_get_u2m_data();
   }
@@ -143,7 +166,14 @@ public class Examples extends AsmLib
   private void example_helloworld_data()
   {
     label("d_helloworld");
-    string_data16("Hello, world!\r\n");
+    if (WIDTH_M_D == 32)
+    {
+      string_data32("Hello, world!\r\n");
+    }
+    else
+    {
+      string_data16("Hello, world!\r\n");
+    }
   }
 
   // copy data from U2M to MEM_D
@@ -158,13 +188,18 @@ public class Examples extends AsmLib
     lib_push(SP_REG_LINK);
     as_mvi(size, 1);
     as_mvi(addr_src, U2M_ADDR_H);
-    lib_sli(addr_src, U2M_ADDR_SHIFT);
+    as_sli(addr_src, U2M_ADDR_SHIFT);
     as_mvi(addr_dst, 0);
-    lib_sli(size, DEPTH_M_D);
+    as_nop();
+    as_mvsi(addr_src, MVS_SL);
+    as_sli(size, DEPTH_M_D);
+    lib_nop(2);
+    as_mvsi(size, MVS_SL);
     label("f_get_u2m_data_L_0");
     as_ld(data, addr_src);
     as_subi(size, 1);
     as_addi(addr_src, 1);
+    as_ld(data, addr_src);
     as_st(addr_dst, data);
     as_cnz(LREG4, size);
     as_addi(addr_dst, 1);
@@ -199,34 +234,34 @@ public class Examples extends AsmLib
     as_mul(R3, R6);
     as_mul(R4, R3);
     as_mul(R4, R4);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
     as_mul(R4, R5);
     as_mul(R4, R6);
     as_mul(R5, R3);
     as_mul(R5, R4);
     as_mul(R5, R5);
     as_mul(R5, R6);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
     as_mul(R6, R3);
     as_mul(R6, R4);
     as_mul(R6, R5);
     as_mul(R6, R6);
     as_nop();
     as_nop();
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
-    as_mvsi(R7, 3);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
+    as_mvsi(R7, MVS_MUL);
     as_nop();
     as_nop();
     as_nop();
@@ -245,9 +280,9 @@ public class Examples extends AsmLib
     as_sli(R3, 5);
     as_sri(R4, 1);
     as_srai(R5, 1);
-    as_mvsi(R7, 0);
-    as_mvsi(R7, 1);
-    as_mvsi(R7, 2);
+    as_mvsi(R7, MVS_SL);
+    as_mvsi(R7, MVS_SR);
+    as_mvsi(R7, MVS_SRA);
   }
 
   private void test4()
@@ -350,7 +385,7 @@ public class Examples extends AsmLib
     as_mvi(R5, 2);
     as_mvi(R6, 3);
     as_mvi(R7, 4);
-    lib_ld_w(R3, "test2");
+    lib_ld(R3, "test2");
     lib_call("f_uart_hex_word");
     lib_call("f_halt");
     // link library
@@ -378,6 +413,20 @@ public class Examples extends AsmLib
     f_halt();
   }
 
+  private void test12()
+  {
+    // test loop
+    as_nop();
+    as_mvi(R3, 15);
+    label("test12_L_0");
+    as_subi(R3, 1);
+    as_cnm(R4, R3);
+    lib_bc(R4, "test12_L_0");
+    lib_call("f_halt");
+    // link library
+    f_halt();
+  }
+
   @Override
   public void program()
   {
@@ -387,7 +436,7 @@ public class Examples extends AsmLib
     example_led();
     //example_counter();
     //example_helloworld();
-    //test2();
+    //test12();
   }
 
   @Override

@@ -15,4 +15,4 @@ program:
 
 clean:
 	make -C ../asm clean
-	rm -f $(EXES) $(EXES16) $(VCDS)
+	rm -f $(EXES) $(VCDS)

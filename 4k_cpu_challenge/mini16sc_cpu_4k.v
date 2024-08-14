@@ -158,7 +158,7 @@ f <= u;
 if (p == 5'h1)
 h <= t;
 if (p == 5'h1)
-u0 <= u;
+u0 <= z;
 if (p == 5'h1)
 j <= F;
 else
