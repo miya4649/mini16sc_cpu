@@ -1,6 +1,6 @@
 # Mini16SC-CPU
 
-Fast and Small Single-Cycle CPU written in Verilog HDL
+Simple, Fast and Small Single-Cycle CPU written in Verilog HDL
 
 ## Features
 
@@ -70,8 +70,8 @@ MVS: reg_a = reg_sp[reg_b]
 
 Immediate Operation (ADDI, SUBI, ...): reg_b:5bit signed immediate
 
-## Pipelined version of this CPU
+## An implementation of a many-core processor using this CPU core
 
-Mini16-CPU
+Mini16-manycore
 
-https://github.com/miya4649/mini16_cpu
+https://github.com/miya4649/mini16_manycore
